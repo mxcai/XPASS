@@ -394,12 +394,19 @@ XPASS <- function(file_z1,file_z2,file_ref1,file_ref2=NULL,file_cov1=NULL,file_c
     cat("Calculate PVE...\n")
     fit <- corr_ss(z_score1,z_score2,K1,K2,K12,zf1$N,zf2$N,Z1=cov1,Z2=cov2,group = group)
   }
-
+  print(fit$H)
   ret <- c(fit,snps=list(snps))
 
   if(compPosMean){
     # if(is.null(ldw)) ldw <- ncol(X1)/1500
-    h12 <- ifelse(fit$H[1,4]>1,fit$H[1,1]*fit$H[1,2],fit$H[1,3])
+    # set absolute value of genetic correlation to be 0.99 if it exceeds 1 and adjust genetic covariance h12 accordingly.
+    # h12 <- ifelse(fit$H[1,4]>1,sqrt(fit$H[1,1]*fit$H[1,2]),fit$H[1,3])
+    if(abs(fit$H[1,4])>1){
+      cat("The MoM estimate of genetic correlation rho is ",fit$H[1,4],", which exceeds 1 (-1). Will use rho=0.99 (-0.99) for computing posterior means.")
+      h12 <- sign(fit$H[1,3])*0.99*sqrt(fit$H[1,1]*fit$H[1,2])
+    } else {
+      h12 <- fit$H[1,3]
+    }
     ngroup <- length(unique(group))
     mu <- matrix(0,ncol(X1),3)
     cat("Compute posterior mean from ",ngroup," blocks ...\n")
